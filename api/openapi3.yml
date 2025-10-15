@@ -1,0 +1,2892 @@
+openapi: "3.0.3"
+info:
+  version: 1.0.0
+  title: Kids Activities Booking Platform - Backend API
+  description: API documentation for the Kids Activities Booking Platform. Connecting parents with quality swimming, tutoring, and art classes for their children.
+
+servers:
+  - url: http://localhost:8000/v1
+    description: Local environment
+  - url: https://api-staging.kidsactivities.com/v1
+    description: Staging environment
+  - url: https://api.kidsactivities.com/v1
+    description: Production environment
+
+tags:
+  - name: auth
+    description: Authentication endpoints
+  - name: children
+    description: Children profile management
+  - name: categories
+    description: Service categories (Swimming, Math, Art)
+  - name: services
+    description: Service discovery and details
+  - name: bookings
+    description: Booking management
+  - name: payments
+    description: Payment processing
+  - name: reviews
+    description: Reviews and ratings
+  - name: vendor
+    description: Vendor management endpoints
+  - name: vendor-services
+    description: Vendor service management
+  - name: vendor-coaches
+    description: Vendor coach management
+  - name: vendor-bookings
+    description: Vendor booking management
+  - name: admin
+    description: Admin panel endpoints
+
+paths:
+  # ==================== AUTH ====================
+  /auth/register/parent:
+    post:
+      summary: Register a new parent account
+      operationId: RegisterParent
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterParentRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/RegisterResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /auth/register/vendor:
+    post:
+      summary: Register a new vendor account
+      operationId: RegisterVendor
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterVendorRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/RegisterVendorResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /auth/login:
+    post:
+      summary: Authenticate user and return access token
+      operationId: LoginUser
+      tags:
+        - auth
+      requestBody:
+        $ref: '#/components/requestBodies/LoginRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/LoginResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /auth/logout:
+    post:
+      summary: Logout user and invalidate token
+      operationId: LogoutUser
+      tags:
+        - auth
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: '#/components/responses/SuccessResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== CHILDREN ====================
+  /children:
+    get:
+      summary: Get list of children for current parent
+      operationId: GetChildren
+      tags:
+        - children
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: '#/components/responses/ChildrenListResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+    post:
+      summary: Add a new child profile
+      operationId: AddChild
+      tags:
+        - children
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AddChildRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/ChildResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /children/{id}:
+    get:
+      summary: Get child details by ID
+      operationId: GetChildById
+      tags:
+        - children
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/ChildResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+    put:
+      summary: Update child profile
+      operationId: UpdateChild
+      tags:
+        - children
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateChildRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/ChildResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+    delete:
+      summary: Delete child profile
+      operationId: DeleteChild
+      tags:
+        - children
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/SuccessResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== CATEGORIES ====================
+  /categories:
+    get:
+      summary: Get all service categories
+      operationId: GetCategories
+      tags:
+        - categories
+      responses:
+        "200":
+          $ref: '#/components/responses/CategoriesResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== SERVICES ====================
+  /services/search:
+    get:
+      summary: Search for services with filters
+      operationId: SearchServices
+      tags:
+        - services
+      parameters:
+        - $ref: '#/components/parameters/CategoryParam'
+        - $ref: '#/components/parameters/CityParam'
+        - $ref: '#/components/parameters/DistrictParam'
+        - $ref: '#/components/parameters/AgeParam'
+        - $ref: '#/components/parameters/SkillLevelParam'
+        - $ref: '#/components/parameters/ClassTypeParam'
+        - $ref: '#/components/parameters/DayParam'
+        - $ref: '#/components/parameters/PriceMinParam'
+        - $ref: '#/components/parameters/PriceMaxParam'
+        - $ref: '#/components/parameters/RatingMinParam'
+        - $ref: '#/components/parameters/IsFeaturedParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/ServicesSearchResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /services/{id}:
+    get:
+      summary: Get service details by ID
+      operationId: GetServiceById
+      tags:
+        - services
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/ServiceDetailResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /services/{id}/availability:
+    get:
+      summary: Get service availability for a specific month
+      operationId: GetServiceAvailability
+      tags:
+        - services
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/MonthParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/ServiceAvailabilityResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /services/{id}/reviews:
+    get:
+      summary: Get reviews for a specific service
+      operationId: GetServiceReviews
+      tags:
+        - services
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/ServiceReviewsResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== BOOKINGS ====================
+  /bookings:
+    get:
+      summary: Get list of bookings for current user
+      operationId: GetBookings
+      tags:
+        - bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/BookingStatusParam'
+        - $ref: '#/components/parameters/ChildIdParam'
+        - $ref: '#/components/parameters/UpcomingParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/BookingsListResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+    post:
+      summary: Create a new booking
+      operationId: CreateBooking
+      tags:
+        - bookings
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/CreateBookingRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/BookingCreatedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "409":
+          $ref: '#/components/responses/ConflictResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /bookings/{id}:
+    get:
+      summary: Get booking details by ID
+      operationId: GetBookingById
+      tags:
+        - bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/BookingDetailResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /bookings/{id}/cancel:
+    post:
+      summary: Cancel a booking
+      operationId: CancelBooking
+      tags:
+        - bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/CancelBookingRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/BookingCancelledResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== PAYMENTS ====================
+  /payments/methods:
+    get:
+      summary: Get available payment methods
+      operationId: GetPaymentMethods
+      tags:
+        - payments
+      responses:
+        "200":
+          $ref: '#/components/responses/PaymentMethodsResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /payments/{payment_number}/status:
+    get:
+      summary: Check payment status
+      operationId: GetPaymentStatus
+      tags:
+        - payments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PaymentNumberParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/PaymentStatusResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /payments/callback:
+    post:
+      summary: Payment gateway webhook callback
+      operationId: PaymentCallback
+      tags:
+        - payments
+      requestBody:
+        $ref: '#/components/requestBodies/PaymentCallbackRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/SuccessResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== REVIEWS ====================
+  /reviews:
+    post:
+      summary: Submit a review for a booking
+      operationId: CreateReview
+      tags:
+        - reviews
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/CreateReviewRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/ReviewCreatedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== VENDOR ====================
+  /vendor/dashboard:
+    get:
+      summary: Get vendor dashboard summary
+      operationId: GetVendorDashboard
+      tags:
+        - vendor
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: '#/components/responses/VendorDashboardResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /vendor/bookings:
+    get:
+      summary: Get vendor bookings
+      operationId: GetVendorBookings
+      tags:
+        - vendor-bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DateParam'
+        - $ref: '#/components/parameters/BookingStatusParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/VendorBookingsResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /vendor/sessions/{session_id}/complete:
+    post:
+      summary: Mark session as complete
+      operationId: CompleteSession
+      tags:
+        - vendor-bookings
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SessionIdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/CompleteSessionRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/SessionCompletedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== VENDOR SERVICES ====================
+  /vendor/services:
+    get:
+      summary: Get vendor services
+      operationId: GetVendorServices
+      tags:
+        - vendor-services
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/VendorServicesResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+    post:
+      summary: Create a new service
+      operationId: CreateService
+      tags:
+        - vendor-services
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/CreateServiceRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/ServiceCreatedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /vendor/services/{id}:
+    put:
+      summary: Update service
+      operationId: UpdateService
+      tags:
+        - vendor-services
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateServiceRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/ServiceUpdatedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+    delete:
+      summary: Delete service
+      operationId: DeleteService
+      tags:
+        - vendor-services
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/SuccessResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /vendor/services/{service_id}/schedules:
+    post:
+      summary: Add schedule to service
+      operationId: AddSchedule
+      tags:
+        - vendor-services
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServiceIdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/AddScheduleRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/ScheduleCreatedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /vendor/schedule-exceptions:
+    post:
+      summary: Add schedule exception (holiday/closed)
+      operationId: AddScheduleException
+      tags:
+        - vendor-services
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AddScheduleExceptionRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/ScheduleExceptionCreatedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== VENDOR COACHES ====================
+  /vendor/coaches:
+    get:
+      summary: Get vendor coaches
+      operationId: GetVendorCoaches
+      tags:
+        - vendor-coaches
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          $ref: '#/components/responses/VendorCoachesResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+    post:
+      summary: Add a new coach
+      operationId: AddCoach
+      tags:
+        - vendor-coaches
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: '#/components/requestBodies/AddCoachRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/CoachCreatedResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /vendor/services/{service_id}/coaches:
+    post:
+      summary: Assign coach to service
+      operationId: AssignCoachToService
+      tags:
+        - vendor-coaches
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ServiceIdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/AssignCoachRequest'
+      responses:
+        "201":
+          $ref: '#/components/responses/SuccessResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /vendor/reviews/{review_id}/respond:
+    post:
+      summary: Respond to a review
+      operationId: RespondToReview
+      tags:
+        - vendor
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ReviewIdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/RespondToReviewRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/SuccessResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  # ==================== ADMIN ====================
+  /admin/vendors:
+    get:
+      summary: Get vendors list with filters
+      operationId: GetVendors
+      tags:
+        - admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/VendorStatusParam'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/AdminVendorsResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /admin/vendors/{id}/approve:
+    post:
+      summary: Approve vendor application
+      operationId: ApproveVendor
+      tags:
+        - admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/SuccessResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /admin/vendors/{id}/reject:
+    post:
+      summary: Reject vendor application
+      operationId: RejectVendor
+      tags:
+        - admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        $ref: '#/components/requestBodies/RejectVendorRequest'
+      responses:
+        "200":
+          $ref: '#/components/responses/SuccessResponse'
+        "400":
+          $ref: '#/components/responses/BadRequestResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        "404":
+          $ref: '#/components/responses/NotFoundResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+  /admin/statistics:
+    get:
+      summary: Get platform statistics
+      operationId: GetStatistics
+      tags:
+        - admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PeriodParam'
+      responses:
+        "200":
+          $ref: '#/components/responses/StatisticsResponse'
+        "401":
+          $ref: '#/components/responses/UnauthorizedResponse'
+        "403":
+          $ref: '#/components/responses/ForbiddenResponse'
+        default:
+          $ref: '#/components/responses/InternalServerErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+    SessionIdParam:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+    ServiceIdParam:
+      name: service_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+    ReviewIdParam:
+      name: review_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+    PaymentNumberParam:
+      name: payment_number
+      in: path
+      required: true
+      schema:
+        type: string
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+    CategoryParam:
+      name: category
+      in: query
+      schema:
+        type: string
+      description: Category slug (swimming, math-tutoring, art-drawing)
+
+    CityParam:
+      name: city
+      in: query
+      schema:
+        type: string
+        default: Tangerang
+
+    DistrictParam:
+      name: district
+      in: query
+      schema:
+        type: string
+
+    AgeParam:
+      name: age
+      in: query
+      schema:
+        type: integer
+      description: Child age in years
+
+    SkillLevelParam:
+      name: skill_level
+      in: query
+      schema:
+        type: string
+        enum: [beginner, intermediate, advanced, all_levels]
+
+    ClassTypeParam:
+      name: class_type
+      in: query
+      schema:
+        type: string
+        enum: [private, small_group, large_group]
+
+    DayParam:
+      name: day
+      in: query
+      schema:
+        type: string
+        enum: [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
+
+    PriceMinParam:
+      name: price_min
+      in: query
+      schema:
+        type: number
+        format: double
+
+    PriceMaxParam:
+      name: price_max
+      in: query
+      schema:
+        type: number
+        format: double
+
+    RatingMinParam:
+      name: rating_min
+      in: query
+      schema:
+        type: number
+        format: double
+        minimum: 0
+        maximum: 5
+
+    IsFeaturedParam:
+      name: is_featured
+      in: query
+      schema:
+        type: boolean
+
+    MonthParam:
+      name: month
+      in: query
+      required: true
+      schema:
+        type: string
+        pattern: '^\d{4}-\d{2}$'
+      description: Month in YYYY-MM format
+
+    BookingStatusParam:
+      name: status
+      in: query
+      schema:
+        $ref: '#/components/schemas/BookingStatus'
+
+    ChildIdParam:
+      name: child_id
+      in: query
+      schema:
+        type: integer
+        format: int64
+
+    UpcomingParam:
+      name: upcoming
+      in: query
+      schema:
+        type: boolean
+
+    DateParam:
+      name: date
+      in: query
+      schema:
+        type: string
+        format: date
+
+    CoachIdParam:
+      name: coach_id
+      in: query
+      schema:
+        type: integer
+        format: int64
+
+    VendorStatusParam:
+      name: status
+      in: query
+      schema:
+        $ref: '#/components/schemas/VendorStatus'
+
+    PeriodParam:
+      name: period
+      in: query
+      schema:
+        type: string
+        enum: [day, week, month, year]
+        default: month
+
+  schemas:
+    # Common Schemas
+    DefaultErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - message
+          properties:
+            message:
+              type: string
+            code:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    # Enums
+    UserRole:
+      type: string
+      enum:
+        - parent
+        - vendor
+        - coach
+        - admin
+
+    UserStatus:
+      type: string
+      enum:
+        - active
+        - suspended
+        - inactive
+
+    VendorStatus:
+      type: string
+      enum:
+        - pending
+        - active
+        - suspended
+        - rejected
+
+    BookingStatus:
+      type: string
+      enum:
+        - pending
+        - confirmed
+        - ongoing
+        - completed
+        - cancelled
+
+    PaymentStatusEnum:
+      type: string
+      enum:
+        - unpaid
+        - paid
+        - refunded
+
+    SessionStatus:
+      type: string
+      enum:
+        - scheduled
+        - completed
+        - cancelled
+        - no_show
+
+    SkillLevel:
+      type: string
+      enum:
+        - beginner
+        - intermediate
+        - advanced
+        - all_levels
+
+    ClassType:
+      type: string
+      enum:
+        - private
+        - small_group
+        - large_group
+
+    BookingType:
+      type: string
+      enum:
+        - trial
+        - single
+        - package_4
+        - package_8
+        - package_12
+
+    BusinessType:
+      type: string
+      enum:
+        - swimming_school
+        - tutoring_center
+        - art_studio
+        - individual_coach
+    
+    ServiceStatus:
+      type: string
+      enum:
+        - active
+        - inactive
+        - draft
+    Gender:
+      type: string
+      enum:
+        - male
+        - female
+
+    # Data Schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+        full_name:
+          type: string
+        phone:
+          type: string
+        role:
+          $ref: '#/components/schemas/UserRole'
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        created_at:
+          type: string
+          format: date-time
+
+    Child:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        nickname:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+        age:
+          type: integer
+        gender:
+          $ref: '#/components/schemas/Gender'
+        special_needs:
+          type: string
+        photo:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        icon:
+          type: string
+        color_hex:
+          type: string
+        display_order:
+          type: integer
+
+    Vendor:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        business_name:
+          type: string
+        description:
+          type: string
+        business_type:
+          $ref: '#/components/schemas/BusinessType'
+        phone:
+          type: string
+        whatsapp:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        district:
+          type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        logo:
+          type: string
+        cover_image:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        rating_avg:
+          type: number
+          format: double
+        total_reviews:
+          type: integer
+        total_bookings:
+          type: integer
+        verified:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/VendorStatus'
+
+    Coach:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        full_name:
+          type: string
+        bio:
+          type: string
+        experience_years:
+          type: integer
+        education:
+          type: string
+        certifications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              issuer:
+                type: string
+              year:
+                type: integer
+              file_url:
+                type: string
+        specializations:
+          type: array
+          items:
+            type: string
+        photo:
+          type: string
+        is_featured:
+          type: boolean
+        status:
+          type: string
+          enum: [active, inactive]
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        age_min:
+          type: integer
+        age_max:
+          type: integer
+        age_range:
+          type: string
+        skill_level:
+          $ref: '#/components/schemas/SkillLevel'
+        class_type:
+          $ref: '#/components/schemas/ClassType'
+        max_participants:
+          type: integer
+        duration_minutes:
+          type: integer
+        price_per_session:
+          type: number
+          format: double
+        trial_price:
+          type: number
+          format: double
+        package_4_price:
+          type: number
+          format: double
+        package_8_price:
+          type: number
+          format: double
+        package_12_price:
+          type: number
+          format: double
+        requirements:
+          type: string
+        what_will_learn:
+          type: string
+        is_featured:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/ServiceStatus'
+
+    ServiceWithVendor:
+      allOf:
+        - $ref: '#/components/schemas/Service'
+        - type: object
+          properties:
+            vendor:
+              $ref: '#/components/schemas/Vendor'
+            category:
+              $ref: '#/components/schemas/Category'
+            available_days:
+              type: array
+              items:
+                type: string
+            next_available:
+              type: string
+              format: date
+            distance_km:
+              type: number
+              format: double
+
+    ServiceDetail:
+      allOf:
+        - $ref: '#/components/schemas/Service'
+        - type: object
+          properties:
+            vendor:
+              $ref: '#/components/schemas/Vendor'
+            coaches:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/Coach'
+                  - type: object
+                    properties:
+                      is_primary:
+                        type: boolean
+            schedules:
+              type: array
+              items:
+                $ref: '#/components/schemas/Schedule'
+            pricing:
+              type: object
+              properties:
+                trial:
+                  type: number
+                  format: double
+                single:
+                  type: number
+                  format: double
+                package_4:
+                  type: number
+                  format: double
+                package_8:
+                  type: number
+                  format: double
+                package_12:
+                  type: number
+                  format: double
+            reviews_preview:
+              type: array
+              items:
+                $ref: '#/components/schemas/Review'
+
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        day_of_week:
+          type: integer
+          minimum: 0
+          maximum: 6
+        day_name:
+          type: string
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        available_slots:
+          type: integer
+        coach:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            name:
+              type: string
+
+    AvailableDate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        slots:
+          type: array
+          items:
+            type: object
+            properties:
+              schedule_id:
+                type: integer
+                format: int64
+              start_time:
+                type: string
+                format: time
+              end_time:
+                type: string
+                format: time
+              available_slots:
+                type: integer
+              coach:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    format: int64
+                  name:
+                    type: string
+
+    Booking:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        booking_number:
+          type: string
+        child:
+          $ref: '#/components/schemas/Child'
+        service:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            name:
+              type: string
+            category:
+              type: string
+        vendor:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            business_name:
+              type: string
+            logo:
+              type: string
+        coach:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            full_name:
+              type: string
+            photo:
+              type: string
+        booking_type:
+          $ref: '#/components/schemas/BookingType'
+        total_sessions:
+          type: integer
+        completed_sessions:
+          type: integer
+        next_session:
+          type: object
+          properties:
+            session_date:
+              type: string
+              format: date
+            start_time:
+              type: string
+              format: time
+            end_time:
+              type: string
+              format: time
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        payment_status:
+          $ref: '#/components/schemas/PaymentStatusEnum'
+        total_amount:
+          type: number
+          format: double
+        created_at:
+          type: string
+          format: date-time
+
+    BookingDetail:
+      allOf:
+        - $ref: '#/components/schemas/Booking'
+        - type: object
+          properties:
+            parent_notes:
+              type: string
+            sessions:
+              type: array
+              items:
+                $ref: '#/components/schemas/BookingSession'
+            payment:
+              $ref: '#/components/schemas/Payment'
+
+    BookingSession:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        session_number:
+          type: integer
+        session_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        attended:
+          type: boolean
+        coach_notes:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        completed_at:
+          type: string
+          format: date-time
+
+    Payment:
+      type: object
+      properties:
+        payment_number:
+          type: string
+        amount:
+          type: number
+          format: double
+        payment_method:
+          type: string
+        status:
+          type: string
+          enum: [pending, success, failed, expired, refunded]
+        paid_at:
+          type: string
+          format: date-time
+        expired_at:
+          type: string
+          format: date-time
+        payment_url:
+          type: string
+
+    PaymentMethod:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        processing_time:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        parent_name:
+          type: string
+        child_age:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        review_text:
+          type: string
+        child_enjoyed:
+          type: boolean
+        would_recommend:
+          type: boolean
+        photos:
+          type: array
+          items:
+            type: string
+        vendor_response:
+          type: string
+        responded_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    ReviewSummary:
+      type: object
+      properties:
+        average_rating:
+          type: number
+          format: double
+        total_reviews:
+          type: integer
+        rating_distribution:
+          type: object
+          properties:
+            "5":
+              type: integer
+            "4":
+              type: integer
+            "3":
+              type: integer
+            "2":
+              type: integer
+            "1":
+              type: integer
+        child_enjoyed_percentage:
+          type: number
+          format: double
+        would_recommend_percentage:
+          type: number
+          format: double
+
+    VendorDashboard:
+      type: object
+      properties:
+        today:
+          type: object
+          properties:
+            total_sessions:
+              type: integer
+            completed_sessions:
+              type: integer
+            upcoming_sessions:
+              type: integer
+            revenue:
+              type: number
+              format: double
+        this_week:
+          type: object
+          properties:
+            total_bookings:
+              type: integer
+            revenue:
+              type: number
+              format: double
+            new_customers:
+              type: integer
+        this_month:
+          type: object
+          properties:
+            total_bookings:
+              type: integer
+            revenue:
+              type: number
+              format: double
+            new_customers:
+              type: integer
+        overview:
+          type: object
+          properties:
+            total_services:
+              type: integer
+            active_coaches:
+              type: integer
+            rating_avg:
+              type: number
+              format: double
+            total_reviews:
+              type: integer
+            pending_bookings:
+              type: integer
+
+    VendorBooking:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        booking_number:
+          type: string
+        session:
+          type: object
+          properties:
+            session_date:
+              type: string
+              format: date
+            start_time:
+              type: string
+              format: time
+            end_time:
+              type: string
+              format: time
+            session_number:
+              type: integer
+            status:
+              $ref: '#/components/schemas/SessionStatus'
+        child:
+          type: object
+          properties:
+            name:
+              type: string
+            age:
+              type: integer
+            photo:
+              type: string
+        parent:
+          type: object
+          properties:
+            full_name:
+              type: string
+            phone:
+              type: string
+            whatsapp:
+              type: string
+        service:
+          type: object
+          properties:
+            name:
+              type: string
+        coach:
+          type: object
+          properties:
+            full_name:
+              type: string
+        parent_notes:
+          type: string
+
+    Statistics:
+      type: object
+      properties:
+        total_users:
+          type: integer
+        total_parents:
+          type: integer
+        total_vendors:
+          type: integer
+        total_coaches:
+          type: integer
+        total_bookings:
+          type: integer
+        total_revenue:
+          type: number
+          format: double
+        commission_earned:
+          type: number
+          format: double
+        active_bookings:
+          type: integer
+        growth:
+          type: object
+          properties:
+            users:
+              type: string
+            bookings:
+              type: string
+            revenue:
+              type: string
+        popular_categories:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              total_bookings:
+                type: integer
+              percentage:
+                type: number
+                format: double
+
+  requestBodies:
+    LoginRequest:
+      description: Request payload for user login
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                minLength: 8
+
+    RegisterParentRequest:
+      description: Request payload for parent registration
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+              - full_name
+              - phone
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                minLength: 8
+              full_name:
+                type: string
+              phone:
+                type: string
+              city:
+                type: string
+                default: Tangerang
+              district:
+                type: string
+
+    RegisterVendorRequest:
+      description: Request payload for vendor registration
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+              - full_name
+              - phone
+              - business_name
+              - business_type
+              - address
+              - city
+            properties:
+              email:
+                type: string
+                format: email
+              password:
+                type: string
+                minLength: 8
+              full_name:
+                type: string
+              phone:
+                type: string
+              business_name:
+                type: string
+              business_type:
+                $ref: '#/components/schemas/BusinessType'
+              address:
+                type: string
+              city:
+                type: string
+                default: Tangerang
+              district:
+                type: string
+              whatsapp:
+                type: string
+
+    AddChildRequest:
+      description: Request payload to add a child
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - name
+              - date_of_birth
+              - gender
+            properties:
+              name:
+                type: string
+              nickname:
+                type: string
+              date_of_birth:
+                type: string
+                format: date
+              gender:
+                $ref: '#/components/schemas/Gender'
+              special_needs:
+                type: string
+
+    UpdateChildRequest:
+      description: Request payload to update a child
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              nickname:
+                type: string
+              special_needs:
+                type: string
+
+    CreateBookingRequest:
+      description: Request payload to create a booking
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - service_id
+              - child_id
+              - booking_type
+              - sessions
+            properties:
+              service_id:
+                type: integer
+                format: int64
+              child_id:
+                type: integer
+                format: int64
+              coach_id:
+                type: integer
+                format: int64
+              booking_type:
+                $ref: '#/components/schemas/BookingType'
+              sessions:
+                type: array
+                items:
+                  type: object
+                  required:
+                    - session_date
+                    - start_time
+                  properties:
+                    schedule_id:
+                      type: integer
+                      format: int64
+                    session_date:
+                      type: string
+                      format: date
+                    start_time:
+                      type: string
+                      format: time
+                    end_time:
+                      type: string
+                      format: time
+              parent_notes:
+                type: string
+
+    CancelBookingRequest:
+      description: Request payload to cancel a booking
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - cancellation_reason
+            properties:
+              cancellation_reason:
+                type: string
+
+    PaymentCallbackRequest:
+      description: Payment gateway webhook callback
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              order_id:
+                type: string
+              status_code:
+                type: string
+              transaction_status:
+                type: string
+              gross_amount:
+                type: string
+
+    CreateReviewRequest:
+      description: Request payload to create a review
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - booking_id
+              - rating
+            properties:
+              booking_id:
+                type: integer
+                format: int64
+              rating:
+                type: integer
+                minimum: 1
+                maximum: 5
+              review_text:
+                type: string
+              child_enjoyed:
+                type: boolean
+              would_recommend:
+                type: boolean
+
+    CompleteSessionRequest:
+      description: Request payload to mark session as complete
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - attended
+            properties:
+              attended:
+                type: boolean
+              coach_notes:
+                type: string
+
+    CreateServiceRequest:
+      description: Request payload to create a service
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - category_id
+              - name
+              - description
+              - class_type
+              - duration_minutes
+              - price_per_session
+            properties:
+              category_id:
+                type: integer
+                format: int64
+              name:
+                type: string
+              description:
+                type: string
+              age_min:
+                type: integer
+              age_max:
+                type: integer
+              skill_level:
+                $ref: '#/components/schemas/SkillLevel'
+              class_type:
+                $ref: '#/components/schemas/ClassType'
+              max_participants:
+                type: integer
+              duration_minutes:
+                type: integer
+              price_per_session:
+                type: number
+                format: double
+              trial_price:
+                type: number
+                format: double
+              package_4_price:
+                type: number
+                format: double
+              package_8_price:
+                type: number
+                format: double
+              package_12_price:
+                type: number
+                format: double
+              requirements:
+                type: string
+              what_will_learn:
+                type: string
+
+    UpdateServiceRequest:
+      description: Request payload to update a service
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+              description:
+                type: string
+              price_per_session:
+                type: number
+                format: double
+              trial_price:
+                type: number
+                format: double
+              status:
+                $ref: '#/components/schemas/ServiceStatus'
+
+    AddScheduleRequest:
+      description: Request payload to add a schedule
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - day_of_week
+              - start_time
+              - end_time
+              - available_slots
+            properties:
+              coach_id:
+                type: integer
+                format: int64
+              day_of_week:
+                type: integer
+                minimum: 0
+                maximum: 6
+              start_time:
+                type: string
+                format: time
+              end_time:
+                type: string
+                format: time
+              available_slots:
+                type: integer
+
+    AddScheduleExceptionRequest:
+      description: Request payload to add a schedule exception
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - exception_date
+              - reason
+            properties:
+              exception_date:
+                type: string
+                format: date
+              reason:
+                type: string
+
+    AddCoachRequest:
+      description: Request payload to add a coach
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - full_name
+              - email
+              - phone
+            properties:
+              full_name:
+                type: string
+              email:
+                type: string
+                format: email
+              phone:
+                type: string
+              bio:
+                type: string
+              experience_years:
+                type: integer
+              education:
+                type: string
+              certifications:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    issuer:
+                      type: string
+                    year:
+                      type: integer
+              specializations:
+                type: array
+                items:
+                  type: string
+
+    AssignCoachRequest:
+      description: Request payload to assign coach to service
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - coach_id
+            properties:
+              coach_id:
+                type: integer
+                format: int64
+              is_primary:
+                type: boolean
+                default: false
+
+    RespondToReviewRequest:
+      description: Request payload to respond to a review
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - response
+            properties:
+              response:
+                type: string
+
+    RejectVendorRequest:
+      description: Request payload to reject vendor
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - reason
+            properties:
+              reason:
+                type: string
+
+  responses:
+    SuccessResponse:
+      description: Generic success response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+    PaymentStatusResponse:
+      description: Payment status response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  payment_number:
+                    type: string
+                  status:
+                    type: string
+                  amount:
+                    type: number
+                    format: double
+                  paid_at:
+                    type: string
+                    format: date-time
+                  payment_method:
+                    type: string
+                  booking:
+                    type: object
+                    properties:
+                      booking_number:
+                        type: string
+                      status:
+                        $ref: '#/components/schemas/BookingStatus'
+
+    ReviewCreatedResponse:
+      description: Review created response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  review:
+                    $ref: '#/components/schemas/Review'
+              message:
+                type: string
+
+    VendorDashboardResponse:
+      description: Vendor dashboard response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                $ref: '#/components/schemas/VendorDashboard'
+
+    VendorBookingsResponse:
+      description: Vendor bookings response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VendorBooking'
+
+    SessionCompletedResponse:
+      description: Session completed response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  session:
+                    $ref: '#/components/schemas/BookingSession'
+              message:
+                type: string
+
+    VendorServicesResponse:
+      description: Vendor services response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    ServiceCreatedResponse:
+      description: Service created response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  service:
+                    $ref: '#/components/schemas/Service'
+
+    ServiceUpdatedResponse:
+      description: Service updated response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  service:
+                    $ref: '#/components/schemas/Service'
+
+    ScheduleCreatedResponse:
+      description: Schedule created response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  schedule:
+                    $ref: '#/components/schemas/Schedule'
+
+    ScheduleExceptionCreatedResponse:
+      description: Schedule exception created response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+    VendorCoachesResponse:
+      description: Vendor coaches response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Coach'
+
+    CoachCreatedResponse:
+      description: Coach created response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  coach:
+                    $ref: '#/components/schemas/Coach'
+
+    AdminVendorsResponse:
+      description: Admin vendors list response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  vendors:
+                    type: array
+                    items:
+                      allOf:
+                        - $ref: '#/components/schemas/Vendor'
+                        - type: object
+                          properties:
+                            user:
+                              type: object
+                              properties:
+                                full_name:
+                                  type: string
+                                email:
+                                  type: string
+                                phone:
+                                  type: string
+                            created_at:
+                              type: string
+                              format: date-time
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    StatisticsResponse:
+      description: Platform statistics response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                $ref: '#/components/schemas/Statistics'
+
+    UnauthorizedResponse:
+      description: Unauthorized response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DefaultErrorResponse"
+          example:
+            error:
+              message: "Unauthorized access"
+              code: "UNAUTHORIZED"
+
+    BadRequestResponse:
+      description: Bad request response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DefaultErrorResponse"
+          example:
+            error:
+              message: "Validation failed"
+              code: "VALIDATION_ERROR"
+              details:
+                - field: "email"
+                  message: "Email is required"
+                - field: "password"
+                  message: "Password must be at least 8 characters"
+
+    ForbiddenResponse:
+      description: Forbidden response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DefaultErrorResponse"
+          example:
+            error:
+              message: "Access forbidden"
+              code: "FORBIDDEN"
+
+    NotFoundResponse:
+      description: Not found response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DefaultErrorResponse"
+          example:
+            error:
+              message: "Resource not found"
+              code: "NOT_FOUND"
+
+    ConflictResponse:
+      description: Conflict response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DefaultErrorResponse"
+          example:
+            error:
+              message: "Time slot already booked"
+              code: "CONFLICT"
+
+    InternalServerErrorResponse:
+      description: Internal server error response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/DefaultErrorResponse"
+          example:
+            error:
+              message: "Internal server error"
+              code: "INTERNAL_SERVER_ERROR"
+
+    LoginResponse:
+      description: Successful login response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                required:
+                  - user
+                  - token
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+
+    RegisterResponse:
+      description: Successful registration response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                required:
+                  - user
+                  - token
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+              message:
+                type: string
+
+    RegisterVendorResponse:
+      description: Successful vendor registration response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                required:
+                  - user
+                  - vendor
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  vendor:
+                    $ref: '#/components/schemas/Vendor'
+              message:
+                type: string
+
+    ChildrenListResponse:
+      description: List of children response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Child'
+
+    ChildResponse:
+      description: Child response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                $ref: '#/components/schemas/Child'
+
+    CategoriesResponse:
+      description: Categories response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    ServicesSearchResponse:
+      description: Services search response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  services:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceWithVendor'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    ServiceDetailResponse:
+      description: Service detail response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                $ref: '#/components/schemas/ServiceDetail'
+
+    ServiceAvailabilityResponse:
+      description: Service availability response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  available_dates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AvailableDate'
+                  exceptions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        reason:
+                          type: string
+
+    ServiceReviewsResponse:
+      description: Service reviews response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  reviews:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  summary:
+                    $ref: '#/components/schemas/ReviewSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    BookingsListResponse:
+      description: Bookings list response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+
+    BookingCreatedResponse:
+      description: Booking created response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  booking:
+                    $ref: '#/components/schemas/BookingDetail'
+              message:
+                type: string
+
+    BookingDetailResponse:
+      description: Booking detail response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                $ref: '#/components/schemas/BookingDetail'
+
+    BookingCancelledResponse:
+      description: Booking cancelled response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: object
+                properties:
+                  booking:
+                    type: object
+                    properties:
+                      status:
+                        $ref: '#/components/schemas/BookingStatus'
+                      refund_amount:
+                        type: number
+                        format: double
+                      refund_status:
+                        type: string
+              message:
+                type: string
+
+    PaymentMethodsResponse:
+      description: Payment methods response
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - data
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
