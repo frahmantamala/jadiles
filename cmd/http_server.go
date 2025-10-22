@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"sync"
 	"time"
 
-	// "github.com/frahmantamala/jadiles/internal/transport"
+	"github.com/frahmantamala/jadiles/internal/transport"
 	"github.com/spf13/cobra"
 )
 
@@ -54,48 +58,48 @@ func runHTTPServer(_ *cobra.Command, _ []string) error {
 	}
 	defer func() { _ = goRedisClient.Close() }()
 
-	// server, err := transport.NewRESTServer(
-	// 	dbConn,
-	// 	goRedisClient,
-	// 	redisConn,
-	// 	cfg,
-	// )
-	// if err != nil {
-	// 	log.Fatalf("failed to initiate http server: %s", err)
-	// }
+	server, err := transport.NewRESTServer(
+		dbConn,
+		goRedisClient,
+		redisConn,
+		cfg,
+	)
+	if err != nil {
+		log.Fatalf("failed to initiate http server: %s", err)
+	}
 
-	// errCh := make(chan error, 1)
-	// signalCh := make(chan os.Signal, 1)
-	// signal.Notify(signalCh, os.Interrupt)
+	errCh := make(chan error, 1)
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt)
 
-	// go func() {
-	// 	log.Println("http server is running")
-	// 	if err := server.Start(); err != nil {
-	// 		errCh <- fmt.Errorf("failed to run http server: %w", err)
-	// 	}
-	// }()
+	go func() {
+		log.Println("http server is running")
+		if err := server.Start(); err != nil {
+			errCh <- fmt.Errorf("failed to run http server: %w", err)
+		}
+	}()
 
-	// go func() {
-	// 	<-signalCh
-	// 	signal.Reset(os.Interrupt)
-	// 	errCh <- fmt.Errorf("interrupted") //nolint:goerr113
-	// }()
+	go func() {
+		<-signalCh
+		signal.Reset(os.Interrupt)
+		errCh <- fmt.Errorf("interrupted") //nolint:goerr113
+	}()
 
-	// <-errCh
+	<-errCh
 
-	// shutdownCtx, cancel := context.WithTimeout(context.Background(), defautlWaitShutdownDuration)
-	// defer cancel()
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), defautlWaitShutdownDuration)
+	defer cancel()
 
-	// wg := new(sync.WaitGroup)
+	wg := new(sync.WaitGroup)
 
-	// wg.Add(1)
-	// go func() {
-	// 	defer wg.Done()
-	// 	if err := server.Stop(shutdownCtx); err != nil {
-	// 		log.Println(err)
-	// 	}
-	// }()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := server.Stop(shutdownCtx); err != nil {
+			log.Println(err)
+		}
+	}()
 
-	// wg.Wait()
+	wg.Wait()
 	return nil
 }

@@ -1863,7 +1863,6 @@ components:
             properties:
               email:
                 type: string
-                format: email
               password:
                 type: string
                 minLength: 8
@@ -1883,7 +1882,6 @@ components:
             properties:
               email:
                 type: string
-                format: email
               password:
                 type: string
                 minLength: 8
@@ -1916,7 +1914,6 @@ components:
             properties:
               email:
                 type: string
-                format: email
               password:
                 type: string
                 minLength: 8
@@ -2231,7 +2228,6 @@ components:
                 type: string
               email:
                 type: string
-                format: email
               phone:
                 type: string
               bio:
