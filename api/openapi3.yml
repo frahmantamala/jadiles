@@ -40,7 +40,7 @@ tags:
 
 paths:
   # ==================== AUTH ====================
-  /auth/register/parent:
+  /register/parent:
     post:
       summary: Register a new parent account
       operationId: RegisterParent
@@ -56,7 +56,7 @@ paths:
         default:
           $ref: '#/components/responses/InternalServerErrorResponse'
 
-  /auth/register/vendor:
+  /register/vendor:
     post:
       summary: Register a new vendor account
       operationId: RegisterVendor
@@ -72,7 +72,7 @@ paths:
         default:
           $ref: '#/components/responses/InternalServerErrorResponse'
 
-  /auth/login:
+  /login:
     post:
       summary: Authenticate user and return access token
       operationId: LoginUser
@@ -88,7 +88,7 @@ paths:
         default:
           $ref: '#/components/responses/InternalServerErrorResponse'
 
-  /auth/logout:
+  /logout:
     post:
       summary: Logout user and invalidate token
       operationId: LogoutUser
@@ -2634,12 +2634,12 @@ components:
               data:
                 type: object
                 required:
-                  - user
                   - token
+                  - refresh_token
                 properties:
-                  user:
-                    $ref: '#/components/schemas/User'
                   token:
+                    type: string
+                  refresh_token:
                     type: string
 
     RegisterResponse:
@@ -2655,12 +2655,9 @@ components:
                 type: object
                 required:
                   - user
-                  - token
                 properties:
                   user:
                     $ref: '#/components/schemas/User'
-                  token:
-                    type: string
               message:
                 type: string
 

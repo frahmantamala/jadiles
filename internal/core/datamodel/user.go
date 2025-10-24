@@ -20,8 +20,8 @@ type User struct {
 
 // ParentProfile represents the parent_profiles table
 type ParentProfile struct {
-	ID           int64     `db:"id"`
-	UserID       int64     `db:"user_id"`
+	ID           int64     `db:"id" gorm:"primaryKey,autoIncrement"`
+	UserID       int64     `db:"user_id" gorm:"foreignKey:UserID"`
 	Address      *string   `db:"address"`
 	City         string    `db:"city"`
 	District     *string   `db:"district"`
@@ -33,8 +33,8 @@ type ParentProfile struct {
 
 // Vendor represents the vendors table
 type Vendor struct {
-	ID              int64      `db:"id"`
-	UserID          int64      `db:"user_id"`
+	ID              int64      `db:"id" gorm:"primaryKey,autoIncrement"`
+	UserID          int64      `db:"user_id" gorm:"foreignKey:UserID"`
 	BusinessName    string     `db:"business_name"`
 	Description     *string    `db:"description"`
 	BusinessType    string     `db:"business_type"` // swimming_school, tutoring_center, art_studio, individual_coach
@@ -61,4 +61,18 @@ type Vendor struct {
 	VerifiedAt      *time.Time `db:"verified_at"`
 	CreatedAt       time.Time  `db:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at"`
+}
+
+type Children struct {
+	ID           int64     `db:"id" gorm:"primaryKey,autoIncrement"`
+	UserID       int64     `db:"user_id" gorm:"foreignKey:UserID"`
+	Name         string    `db:"name"`
+	Nickname     string    `db:"nickname"`
+	DOB          time.Time `db:"date_of_birth"`
+	Age          int       `db:"age"`
+	SpecialNeeds string    `db:"special_needs"`
+	Gender       string    `db:"gender"`
+	Photo        *string   `db:"photo"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
 }

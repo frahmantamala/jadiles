@@ -61,6 +61,7 @@ var (
 
 	ErrDataNotFound              = errors.New("data not found")
 	ErrForbiddenToUseApplication = errors.New("user is forbidden to use this application. please contact your administrator")
+	ErrUserExist                 = errors.New("user already exist")
 )
 
 // AppError represents a structured application error

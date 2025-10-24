@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	authEndpoint "github.com/frahmantamala/jadiles/internal/auth/endpoint"
 	"github.com/go-chi/chi/v5"
 
 	"github.com/frahmantamala/jadiles/internal"
+	userEndpoint "github.com/frahmantamala/jadiles/internal/user/endpoint"
 	"github.com/frahmantamala/jadiles/pkg/logger"
 	"github.com/gomodule/redigo/redis"
 	goRedis "github.com/redis/go-redis/v9"
@@ -65,9 +65,9 @@ func NewRESTServer(
 		v1.Group(func(r chi.Router) {
 			r.Use(logMw.Middleware)
 
-			// Register auth routes
-			if err := authEndpoint.RegisterAuthRoutes(r, gormDB, goRedisClient, config); err != nil {
-				routeErr = fmt.Errorf("failed to register auth routes: %w", err)
+			// Register user routes (includes auth endpoints like login, register)
+			if err := userEndpoint.RegisterUserRoutes(r, gormDB, goRedisClient, config); err != nil {
+				routeErr = fmt.Errorf("failed to register user routes: %w", err)
 				return
 			}
 		})

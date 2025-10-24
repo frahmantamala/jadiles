@@ -12,6 +12,9 @@ const (
 	UserIDCtxKey    = contextKey("user_id")
 	RequestIDCtxKey = contextKey("request_id")
 	TraceIDCtxKey   = contextKey("trace_id")
+	EmailCtxKey     = contextKey("email")
+	RoleCtxKey      = contextKey("role")
+	TokenKey        = contextKey("token")
 )
 
 var (
@@ -64,4 +67,19 @@ func InjectTraceID(parentCtx context.Context, traceID string) context.Context {
 
 func InjectUserID(parentCtx context.Context, id int64) context.Context {
 	return context.WithValue(parentCtx, UserIDCtxKey, id)
+}
+
+func ExtractEmail(ctx context.Context) (string, bool) {
+	email, ok := ctx.Value(EmailCtxKey).(string)
+	return email, ok
+}
+
+func ExtractRole(ctx context.Context) (string, bool) {
+	role, ok := ctx.Value(RoleCtxKey).(string)
+	return role, ok
+}
+
+func ExtractToken(ctx context.Context) (string, bool) {
+	token, ok := ctx.Value(TokenKey).(string)
+	return token, ok
 }
