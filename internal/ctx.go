@@ -83,3 +83,13 @@ func ExtractToken(ctx context.Context) (string, bool) {
 	token, ok := ctx.Value(TokenKey).(string)
 	return token, ok
 }
+
+// ExtractParentID extracts parent ID from context (parent is a user)
+// Returns the user ID which represents the authenticated parent
+func ExtractParentID(ctx context.Context) (int64, error) {
+	id, ok := ctx.Value(UserIDCtxKey).(int64)
+	if !ok {
+		return 0, ErrUserNotFound
+	}
+	return id, nil
+}

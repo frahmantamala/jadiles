@@ -1,6 +1,7 @@
 package endpoint
 
 import (
+	"github.com/frahmantamala/jadiles/internal/services/booking"
 	"github.com/frahmantamala/jadiles/internal/services/detail"
 	"github.com/frahmantamala/jadiles/internal/services/postgresql"
 	"github.com/frahmantamala/jadiles/internal/services/review"
@@ -31,12 +32,20 @@ func RegisterServiceRoutes(r chi.Router, db *gorm.DB) error {
 	reviewSvc := review.NewService(repo)
 	reviewHandler := review.NewHandler(reviewSvc)
 
+	// Initialize booking capability
+	bookingSvc := booking.NewService(repo)
+	bookingHandler := booking.NewHandler(bookingSvc)
+
 	// Public routes (no authentication required)
 	r.Get("/services/search", searchHandler.SearchServices)
 	r.Get("/categories", searchHandler.GetCategories)
 	r.Get("/services/{service_id}", detailHandler.GetServiceDetail)
 	r.Get("/services/{service_id}/availability", scheduleHandler.GetServiceAvailability)
 	r.Get("/services/{service_id}/reviews", reviewHandler.GetServiceReviews)
+
+	// Booking routes (require authentication - TODO: add auth middleware)
+	r.Post("/bookings", bookingHandler.CreateBooking)
+	r.Get("/bookings/{booking_id}", bookingHandler.GetBooking)
 
 	return nil
 }
