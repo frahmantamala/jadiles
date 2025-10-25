@@ -10,6 +10,8 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/frahmantamala/jadiles/internal"
+	authpkg "github.com/frahmantamala/jadiles/internal/auth"
+	childEndpoint "github.com/frahmantamala/jadiles/internal/child/endpoint"
 	userEndpoint "github.com/frahmantamala/jadiles/internal/user/endpoint"
 	"github.com/frahmantamala/jadiles/pkg/logger"
 	"github.com/gomodule/redigo/redis"
@@ -65,9 +67,22 @@ func NewRESTServer(
 		v1.Group(func(r chi.Router) {
 			r.Use(logMw.Middleware)
 
+			// Initialize JWT auth for child routes
+			jwtAuth, err := authpkg.NewJWTAuthentication(config.HTTPServer)
+			if err != nil {
+				routeErr = fmt.Errorf("failed to initialize JWT auth: %w", err)
+				return
+			}
+
 			// Register user routes (includes auth endpoints like login, register)
 			if err := userEndpoint.RegisterUserRoutes(r, gormDB, goRedisClient, config); err != nil {
 				routeErr = fmt.Errorf("failed to register user routes: %w", err)
+				return
+			}
+
+			// Register child routes
+			if err := childEndpoint.RegisterChildRoutes(r, gormDB, jwtAuth); err != nil {
+				routeErr = fmt.Errorf("failed to register child routes: %w", err)
 				return
 			}
 		})

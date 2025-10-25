@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log/slog"
 	"time"
 
 	"github.com/frahmantamala/jadiles/internal"
@@ -19,6 +18,9 @@ type Repository interface {
 	CreateUser(ctx context.Context, user *datamodel.User) error
 	CreateParentProfile(ctx context.Context, profile *datamodel.ParentProfile) error
 	CreateVendor(ctx context.Context, vendor *datamodel.Vendor) error
+	// Transaction-based methods
+	CreateParentWithProfile(ctx context.Context, user *datamodel.User, profile *datamodel.ParentProfile) error
+	CreateVendorWithBusiness(ctx context.Context, user *datamodel.User, vendor *datamodel.Vendor) error
 }
 
 type TokenStorage interface {
@@ -50,7 +52,6 @@ func NewService(
 }
 
 func (s *Service) RegisterParent(ctx context.Context, params *RegisterParentParams) (*v1.RegisterResponse, error) {
-	// Check if user already exists
 	existingUser, err := s.repo.GetUserByEmail(ctx, params.Email)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, internal.NewInternalServerError(err)
@@ -59,7 +60,6 @@ func (s *Service) RegisterParent(ctx context.Context, params *RegisterParentPara
 		return nil, internal.ErrUserExist
 	}
 
-	// Create domain user for validation
 	domainUser := &User{
 		Email:    params.Email,
 		FullName: params.FullName,
@@ -68,47 +68,39 @@ func (s *Service) RegisterParent(ctx context.Context, params *RegisterParentPara
 		Status:   StatusActive,
 	}
 
-	// Validate password
 	if err := domainUser.ValidatePassword(params.Password); err != nil {
 		return nil, internal.NewValidationError(err.Error())
 	}
 
-	// Validate user domain rules
 	if err := domainUser.Validate(); err != nil {
 		return nil, internal.NewValidationError(err.Error())
 	}
 
-	// Hash password
 	hashedPassword, err := s.passwordManager.HashPassword(params.Password)
 	if err != nil {
 		return nil, internal.NewInternalServerError(err)
 	}
 
-	// Convert to data model
 	userDM := params.RegParentToDataModel(hashedPassword)
-	if err := s.repo.CreateUser(ctx, userDM); err != nil {
-		return nil, internal.NewInternalServerError(err)
-	}
+	userDM.Version = 1
 
-	// Create parent profile domain
 	domainProfile := &ParentProfile{
-		UserID:   userDM.ID,
 		City:     params.City,
 		District: params.District,
 	}
 
-	// Validate parent profile
 	if err := domainProfile.Validate(); err != nil {
 		return nil, internal.NewValidationError(err.Error())
 	}
 
 	pp := &ParentProfileParams{
-		UserDetails: userDM.ID,
-		City:        params.City,
-		District:    params.District,
+		City:     params.City,
+		District: params.District,
 	}
 	profileDM := pp.PPToDataModel()
-	if err := s.repo.CreateParentProfile(ctx, profileDM); err != nil {
+	profileDM.Version = 1
+
+	if err := s.repo.CreateParentWithProfile(ctx, userDM, profileDM); err != nil {
 		return nil, internal.NewInternalServerError(err)
 	}
 
@@ -128,7 +120,6 @@ func (s *Service) RegisterParent(ctx context.Context, params *RegisterParentPara
 }
 
 func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorParams) (*v1.RegisterVendorResponse, error) {
-	// Check if user already exists
 	existingUser, err := s.repo.GetUserByEmail(ctx, params.Email)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, internal.NewInternalServerError(err)
@@ -137,7 +128,6 @@ func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorPara
 		return nil, internal.ErrUserExist
 	}
 
-	// Create domain user for validation
 	domainUser := &User{
 		Email:    params.Email,
 		FullName: params.FullName,
@@ -146,17 +136,14 @@ func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorPara
 		Status:   StatusActive,
 	}
 
-	// Validate password
 	if err := domainUser.ValidatePassword(params.Password); err != nil {
 		return nil, internal.NewValidationError(err.Error())
 	}
 
-	// Validate user domain rules
 	if err := domainUser.Validate(); err != nil {
 		return nil, internal.NewValidationError(err.Error())
 	}
 
-	// Create domain vendor for validation
 	domainVendor := &Vendor{
 		BusinessName: params.BusinessName,
 		BusinessType: params.BusinessType,
@@ -168,18 +155,16 @@ func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorPara
 		Status:       VendorStatusPending,
 	}
 
-	// Validate vendor domain rules
 	if err := domainVendor.Validate(); err != nil {
 		return nil, internal.NewValidationError(err.Error())
 	}
 
-	// Hash password
 	hashedPassword, err := s.passwordManager.HashPassword(params.Password)
 	if err != nil {
 		return nil, internal.NewInternalServerError(err)
 	}
 
-	// Create user data model
+	// Prepare user data model with version for optimistic locking
 	userDM := &datamodel.User{
 		Email:        params.Email,
 		PasswordHash: hashedPassword,
@@ -187,13 +172,10 @@ func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorPara
 		Phone:        params.Phone,
 		Role:         "vendor",
 		Status:       "active",
+		Version:      1, // Initialize version for optimistic locking
 	}
 
-	if err := s.repo.CreateUser(ctx, userDM); err != nil {
-		return nil, internal.NewInternalServerError(err)
-	}
-
-	// Create vendor data model
+	// Prepare vendor data model with version for optimistic locking
 	var whatsappPtr *string
 	if params.Whatsapp != "" {
 		w := params.Whatsapp
@@ -206,7 +188,6 @@ func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorPara
 	}
 
 	vendorDM := &datamodel.Vendor{
-		UserID:       userDM.ID,
 		BusinessName: params.BusinessName,
 		BusinessType: params.BusinessType,
 		Phone:        params.Phone,
@@ -215,13 +196,14 @@ func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorPara
 		City:         params.City,
 		District:     districtPtr,
 		Status:       "pending",
+		Version:      1, // Initialize version for optimistic locking
 	}
 
-	if err := s.repo.CreateVendor(ctx, vendorDM); err != nil {
+	// Create user and vendor in transaction (repository handles transaction)
+	if err := s.repo.CreateVendorWithBusiness(ctx, userDM, vendorDM); err != nil {
 		return nil, internal.NewInternalServerError(err)
 	}
 
-	// Build response
 	resp := &v1.RegisterVendorResponse{}
 	resp.Data.User = v1.User{
 		Id:        &userDM.ID,
@@ -248,8 +230,6 @@ func (s *Service) RegisterVendor(ctx context.Context, params *RegisterVendorPara
 
 func (s *Service) Login(ctx context.Context, params *LoginParams) (*v1.LoginResponse, error) {
 	userDM, err := s.repo.GetUserByEmail(ctx, params.Email)
-
-	slog.InfoContext(ctx, "user data masuk", userDM)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, internal.NewUnauthorizedError("Invalid credentials")

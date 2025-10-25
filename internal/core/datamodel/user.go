@@ -14,6 +14,7 @@ type User struct {
 	Status        string    `db:"status"` // active, suspended
 	EmailVerified bool      `db:"email_verified"`
 	PhoneVerified bool      `db:"phone_verified"`
+	Version       int       `db:"version" gorm:"default:1"` // Optimistic locking
 	CreatedAt     time.Time `db:"created_at"`
 	UpdatedAt     time.Time `db:"updated_at"`
 }
@@ -27,6 +28,7 @@ type ParentProfile struct {
 	District     *string   `db:"district"`
 	PostalCode   *string   `db:"postal_code"`
 	ProfileImage *string   `db:"profile_image"`
+	Version      int       `db:"version" gorm:"default:1"` // Optimistic locking
 	CreatedAt    time.Time `db:"created_at"`
 	UpdatedAt    time.Time `db:"updated_at"`
 }
@@ -59,20 +61,21 @@ type Vendor struct {
 	TotalBookings   int        `db:"total_bookings"`
 	Verified        bool       `db:"verified"`
 	VerifiedAt      *time.Time `db:"verified_at"`
+	Version         int        `db:"version" gorm:"default:1"` // Optimistic locking
 	CreatedAt       time.Time  `db:"created_at"`
 	UpdatedAt       time.Time  `db:"updated_at"`
 }
 
 type Children struct {
 	ID           int64     `db:"id" gorm:"primaryKey,autoIncrement"`
-	UserID       int64     `db:"user_id" gorm:"foreignKey:UserID"`
+	ParentID     int64     `db:"parent_id" gorm:"column:parent_id;foreignKey:ParentID"`
 	Name         string    `db:"name"`
-	Nickname     string    `db:"nickname"`
-	DOB          time.Time `db:"date_of_birth"`
-	Age          int       `db:"age"`
-	SpecialNeeds string    `db:"special_needs"`
-	Gender       string    `db:"gender"`
+	Nickname     *string   `db:"nickname"`
+	DateOfBirth  time.Time `db:"date_of_birth" gorm:"column:date_of_birth"`
+	Gender       string    `db:"gender"` // male, female
+	SpecialNeeds *string   `db:"special_needs" gorm:"column:special_needs"`
 	Photo        *string   `db:"photo"`
+	Version      int       `db:"version" gorm:"default:1"` // Optimistic locking
 	CreatedAt    time.Time `db:"created_at"`
 	UpdatedAt    time.Time `db:"updated_at"`
 }
