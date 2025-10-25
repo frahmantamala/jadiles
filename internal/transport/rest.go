@@ -12,6 +12,7 @@ import (
 	"github.com/frahmantamala/jadiles/internal"
 	authpkg "github.com/frahmantamala/jadiles/internal/auth"
 	childEndpoint "github.com/frahmantamala/jadiles/internal/child/endpoint"
+	serviceEndpoint "github.com/frahmantamala/jadiles/internal/services/endpoint"
 	userEndpoint "github.com/frahmantamala/jadiles/internal/user/endpoint"
 	"github.com/frahmantamala/jadiles/pkg/logger"
 	"github.com/gomodule/redigo/redis"
@@ -83,6 +84,12 @@ func NewRESTServer(
 			// Register child routes
 			if err := childEndpoint.RegisterChildRoutes(r, gormDB, jwtAuth); err != nil {
 				routeErr = fmt.Errorf("failed to register child routes: %w", err)
+				return
+			}
+
+			// Register service routes (public - no auth required)
+			if err := serviceEndpoint.RegisterServiceRoutes(r, gormDB); err != nil {
+				routeErr = fmt.Errorf("failed to register service routes: %w", err)
 				return
 			}
 		})
