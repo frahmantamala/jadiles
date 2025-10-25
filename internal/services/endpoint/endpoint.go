@@ -1,8 +1,11 @@
 package endpoint
 
 import (
-	"github.com/frahmantamala/jadiles/internal/services"
+	"github.com/frahmantamala/jadiles/internal/services/detail"
 	"github.com/frahmantamala/jadiles/internal/services/postgresql"
+	"github.com/frahmantamala/jadiles/internal/services/review"
+	"github.com/frahmantamala/jadiles/internal/services/schedule"
+	"github.com/frahmantamala/jadiles/internal/services/search"
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 )
@@ -12,15 +15,28 @@ func RegisterServiceRoutes(r chi.Router, db *gorm.DB) error {
 	// Initialize repository
 	repo := postgresql.NewRepository(db)
 
-	// Initialize service (usecase)
-	svc := services.NewService(repo)
+	// Initialize search capability
+	searchSvc := search.NewService(repo)
+	searchHandler := search.NewHandler(searchSvc)
 
-	// Initialize handler
-	handler := services.NewHandler(svc)
+	// Initialize detail capability
+	detailSvc := detail.NewService(repo)
+	detailHandler := detail.NewHandler(detailSvc)
+
+	// Initialize schedule capability
+	scheduleSvc := schedule.NewService(repo)
+	scheduleHandler := schedule.NewHandler(scheduleSvc)
+
+	// Initialize review capability
+	reviewSvc := review.NewService(repo)
+	reviewHandler := review.NewHandler(reviewSvc)
 
 	// Public routes (no authentication required)
-	r.Get("/services/search", handler.SearchServices)
-	r.Get("/categories", handler.GetCategories)
+	r.Get("/services/search", searchHandler.SearchServices)
+	r.Get("/categories", searchHandler.GetCategories)
+	r.Get("/services/{service_id}", detailHandler.GetServiceDetail)
+	r.Get("/services/{service_id}/availability", scheduleHandler.GetServiceAvailability)
+	r.Get("/services/{service_id}/reviews", reviewHandler.GetServiceReviews)
 
 	return nil
 }

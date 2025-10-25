@@ -72,3 +72,41 @@ type Review struct {
 	CreatedAt         time.Time  `db:"created_at"`
 	UpdatedAt         time.Time  `db:"updated_at"`
 }
+
+// ServiceCoach represents the service_coaches join table
+type ServiceCoach struct {
+	ID        int64 `db:"id" gorm:"primaryKey,autoIncrement"`
+	ServiceID int64 `db:"service_id"`
+	CoachID   int64 `db:"coach_id"`
+	IsPrimary bool  `db:"is_primary"`
+}
+
+// ScheduleException represents the schedule_exceptions table
+type ScheduleException struct {
+	ID            int64      `db:"id" gorm:"primaryKey,autoIncrement"`
+	ScheduleID    *int64     `db:"schedule_id"`
+	ServiceID     *int64     `db:"service_id"`
+	VendorID      *int64     `db:"vendor_id"`
+	ExceptionDate time.Time  `db:"exception_date"`
+	Reason        *string    `db:"reason"`
+	IsClosed      bool       `db:"is_closed"`
+	CreatedAt     time.Time  `db:"created_at"`
+}
+
+// Coach represents the coaches table
+type Coach struct {
+	ID               int64      `db:"id" gorm:"primaryKey,autoIncrement"`
+	UserID           int64      `db:"user_id"`
+	VendorID         int64      `db:"vendor_id"`
+	FullName         string     `db:"full_name"`
+	Bio              *string    `db:"bio"`
+	ExperienceYears  int        `db:"experience_years"`
+	Education        *string    `db:"education"`
+	Certifications   *string    `db:"certifications"` // JSONB
+	Specializations  *string    `db:"specializations"` // JSONB
+	Photo            *string    `db:"photo"`
+	IsFeatured       bool       `db:"is_featured"`
+	Status           string     `db:"status"` // active, inactive
+	CreatedAt        time.Time  `db:"created_at"`
+	UpdatedAt        time.Time  `db:"updated_at"`
+}

@@ -10,7 +10,7 @@ import (
 )
 
 // searchResult represents the raw query result with embedded fields and aggregated data
-type searchResult struct {
+type SearchResult struct {
 	datamodel.Services
 	VendorBusinessName string   `gorm:"column:vendor_business_name"`
 	VendorCity         string   `gorm:"column:vendor_city"`
@@ -25,7 +25,7 @@ type searchResult struct {
 
 // SearchServices performs complex filtering and searching for services
 func (r *Repository) SearchServices(ctx context.Context, filters *services.SearchFilters) ([]*services.ServiceWithAggregates, int64, error) {
-	var servicesData []*searchResult
+	var servicesData []*SearchResult
 	var total int64
 
 	// Build base query with joins

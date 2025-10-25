@@ -1,4 +1,4 @@
-package services
+package search
 
 import (
 	"context"
@@ -7,38 +7,24 @@ import (
 
 	"github.com/frahmantamala/jadiles/internal"
 	"github.com/frahmantamala/jadiles/internal/core/datamodel"
+	"github.com/frahmantamala/jadiles/internal/services"
 	v1 "github.com/frahmantamala/jadiles/pkg/openapi/v1"
 )
 
-// ServiceWithAggregates is defined in postgresql package
-// Re-export it for use in the interface
-type ServiceWithAggregates = struct {
-	datamodel.Services
-	VendorBusinessName string
-	VendorCity         string
-	VendorDistrict     string
-	VendorLogo         *string
-	VendorRatingAvg    *float64
-	VendorTotalReviews *int
-	VendorVerified     bool
-	CategoryName       string
-	CategorySlug       string
-}
-
+// Repository defines the data access interface for search capability
 type Repository interface {
-	SearchServices(ctx context.Context, filters *SearchFilters) ([]*ServiceWithAggregates, int64, error)
-	GetServiceByID(ctx context.Context, id int64) (*datamodel.Services, error)
+	SearchServices(ctx context.Context, filters *services.SearchFilters) ([]*services.ServiceWithAggregates, int64, error)
 	GetCategoryBySlug(ctx context.Context, slug string) (*datamodel.ServiceCategory, error)
-	GetAvailableDaysForService(ctx context.Context, serviceID int64) ([]string, error)
-	GetNextAvailableDate(ctx context.Context, serviceID int64) (*string, error)
 	GetAllCategories(ctx context.Context) ([]*datamodel.ServiceCategory, error)
 	EnrichServiceWithDetails(ctx context.Context, serviceID int64) (map[string]interface{}, error)
 }
 
+// ServiceUsecase handles search business logic
 type ServiceUsecase struct {
 	repo Repository
 }
 
+// NewService creates a new search service
 func NewService(repo Repository) *ServiceUsecase {
 	return &ServiceUsecase{
 		repo: repo,
@@ -69,10 +55,10 @@ func (s *ServiceUsecase) SearchServices(ctx context.Context, params *SearchServi
 	}
 
 	// Convert to domain models with enriched data
-	services := make([]*Service, 0, len(servicesData))
+	servicesResult := make([]*services.Service, 0, len(servicesData))
 	for _, svcData := range servicesData {
 		// Convert to domain service
-		domainService := FromServiceWithAggregates(svcData)
+		domainService := services.FromServiceWithAggregates(svcData)
 
 		// Enrich with additional data (available days, next available date)
 		details, err := s.repo.EnrichServiceWithDetails(ctx, svcData.ID)
@@ -89,14 +75,14 @@ func (s *ServiceUsecase) SearchServices(ctx context.Context, params *SearchServi
 			}
 		}
 
-		services = append(services, domainService)
+		servicesResult = append(servicesResult, domainService)
 	}
 
 	// Calculate pagination
 	totalPages := int(math.Ceil(float64(total) / float64(filters.PageSize)))
 
 	result := &ServiceSearchResult{
-		Services: services,
+		Services: servicesResult,
 		Pagination: &Pagination{
 			Page:       filters.Page,
 			Limit:      filters.PageSize,

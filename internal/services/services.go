@@ -3,6 +3,8 @@ package services
 import (
 	"fmt"
 	"time"
+
+	"github.com/frahmantamala/jadiles/internal/core/datamodel"
 )
 
 // Service represents the service domain model
@@ -44,6 +46,20 @@ type Service struct {
 	AvailableDays      []string
 	NextAvailable      *time.Time
 	DistanceKm         *float64
+}
+
+// ServiceWithAggregates represents service data with vendor and category info from repository
+type ServiceWithAggregates struct {
+	datamodel.Services
+	VendorBusinessName string
+	VendorCity         string
+	VendorDistrict     string
+	VendorLogo         *string
+	VendorRatingAvg    *float64
+	VendorTotalReviews *int
+	VendorVerified     bool
+	CategoryName       string
+	CategorySlug       string
 }
 
 type SkillLevel string
@@ -310,4 +326,124 @@ func FromServiceWithAggregates(dm *ServiceWithAggregates) *Service {
 	domainService.WhatWillLearn = dm.WhatWillLearn
 
 	return domainService
+}
+
+// ServiceDetail represents comprehensive service information for detail view
+type ServiceDetail struct {
+	Service
+	Vendor         *VendorDetail
+	Coaches        []*CoachDetail
+	Schedules      []*ScheduleDetail
+	ReviewsPreview []*ReviewPreview
+	ReviewSummary  *ReviewSummary
+}
+
+// VendorDetail represents extended vendor information
+type VendorDetail struct {
+	ID           int64
+	BusinessName string
+	Description  *string
+	Phone        string
+	WhatsApp     *string
+	Address      string
+	City         string
+	District     string
+	Photos       []string // JSONB array
+	Amenities    []string // JSONB array
+	Logo         *string
+	CoverImage   *string
+	RatingAvg    *float64
+	TotalReviews int
+	Verified     bool
+}
+
+// CoachDetail represents coach with credentials
+type CoachDetail struct {
+	ID              int64
+	FullName        string
+	Bio             *string
+	Photo           *string
+	ExperienceYears int
+	Education       *string
+	Certifications  []Certification // JSONB
+	Specializations []string        // JSONB
+	IsPrimary       bool            // From service_coaches table
+	IsFeatured      bool
+}
+
+// Certification represents a coach's certification
+type Certification struct {
+	Name    string `json:"name"`
+	Issuer  string `json:"issuer"`
+	Year    int    `json:"year"`
+	FileURL string `json:"file_url,omitempty"`
+}
+
+// ScheduleDetail represents schedule with coach information
+type ScheduleDetail struct {
+	ID             int64
+	DayOfWeek      int
+	DayName        string // "Monday", "Tuesday", etc
+	StartTime      string
+	EndTime        string
+	AvailableSlots int
+	CoachID        *int64
+	CoachName      *string
+	IsActive       bool
+}
+
+// DayAvailability represents calendar day view with slots
+type DayAvailability struct {
+	Date      time.Time
+	Slots     []*AvailabilitySlot
+	Exception *ScheduleException // Holiday/closure info if applicable
+}
+
+// AvailabilitySlot represents time slot availability
+type AvailabilitySlot struct {
+	ScheduleID     int64
+	StartTime      string
+	EndTime        string
+	AvailableSlots int
+	CoachName      *string
+}
+
+// ScheduleException represents a schedule exception (holiday/closure)
+type ScheduleException struct {
+	Date     time.Time
+	Reason   *string
+	IsClosed bool
+}
+
+// ReviewPreview represents review with parent information
+type ReviewPreview struct {
+	ID             int64
+	ParentName     string
+	ChildAge       *int
+	Rating         int
+	ReviewText     *string
+	DidChildEnjoy  *bool
+	WouldRecommend bool
+	Photos         []string
+	VendorResponse *string
+	RespondedAt    *time.Time
+	CreatedAt      time.Time
+}
+
+// ReviewSummary represents aggregate review statistics
+type ReviewSummary struct {
+	TotalReviews             int
+	AverageRating            float64
+	RatingDistribution       map[int]int // {1: 5, 2: 3, 3: 10, 4: 20, 5: 62}
+	ChildEnjoyedPercentage   float64
+	WouldRecommendPercentage float64
+}
+
+// GetDayName returns the day name from day of week number
+func GetDayName(dayOfWeek int) string {
+	days := []string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
+	if dayOfWeek >= 0 && dayOfWeek < len(days) {
+		return days[dayOfWeek]
+	}
+	return ""
 }

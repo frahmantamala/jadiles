@@ -1,4 +1,4 @@
-package services
+package search
 
 import (
 	"net/http"
@@ -7,10 +7,12 @@ import (
 	"github.com/go-chi/render"
 )
 
+// Handler handles HTTP requests for search capability
 type Handler struct {
 	service *ServiceUsecase
 }
 
+// NewHandler creates a new search handler
 func NewHandler(service *ServiceUsecase) *Handler {
 	return &Handler{
 		service: service,
@@ -44,7 +46,7 @@ func (h *Handler) SearchServices(w http.ResponseWriter, r *http.Request) {
 	// Convert to v1 response
 	response := ToV1SearchResponse(result)
 
-	render.Status(r, http.StatusCreated)
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 }
 
@@ -59,6 +61,6 @@ func (h *Handler) GetCategories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Status(r, http.StatusCreated)
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, response)
 }

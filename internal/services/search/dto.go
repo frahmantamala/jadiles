@@ -1,4 +1,4 @@
-package services
+package search
 
 import (
 	"context"
@@ -8,25 +8,26 @@ import (
 	"github.com/frahmantamala/jadiles/internal"
 	"github.com/frahmantamala/jadiles/internal/core/common"
 	"github.com/frahmantamala/jadiles/internal/core/datamodel"
+	"github.com/frahmantamala/jadiles/internal/services"
 	v1 "github.com/frahmantamala/jadiles/pkg/openapi/v1"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // SearchServicesParams represents query parameters for searching services
 type SearchServicesParams struct {
-	CategorySlug string      `validate:"omitempty"`
-	City         string      `validate:"omitempty,max=100"`
-	District     string      `validate:"omitempty,max=100"`
-	ChildAge     *int        `validate:"omitempty,min=0,max=18"`
-	SkillLevel   *SkillLevel `validate:"omitempty,oneof=beginner intermediate advanced all_levels"`
-	ClassType    *ClassType  `validate:"omitempty,oneof=private small_group large_group"`
-	DayOfWeek    *int        `validate:"omitempty,min=0,max=6"`
-	MinPrice     *float64    `validate:"omitempty,min=0"`
-	MaxPrice     *float64    `validate:"omitempty,min=0"`
-	MinRating    *float64    `validate:"omitempty,min=0,max=5"`
-	FeaturedOnly bool        `validate:"omitempty"`
-	Page         int         `validate:"required,min=1"`
-	Limit        int         `validate:"required,min=1,max=100"`
+	CategorySlug string                `validate:"omitempty"`
+	City         string                `validate:"omitempty,max=100"`
+	District     string                `validate:"omitempty,max=100"`
+	ChildAge     *int                  `validate:"omitempty,min=0,max=18"`
+	SkillLevel   *services.SkillLevel  `validate:"omitempty,oneof=beginner intermediate advanced all_levels"`
+	ClassType    *services.ClassType   `validate:"omitempty,oneof=private small_group large_group"`
+	DayOfWeek    *int                  `validate:"omitempty,min=0,max=6"`
+	MinPrice     *float64              `validate:"omitempty,min=0"`
+	MaxPrice     *float64              `validate:"omitempty,min=0"`
+	MinRating    *float64              `validate:"omitempty,min=0,max=5"`
+	FeaturedOnly bool                  `validate:"omitempty"`
+	Page         int                   `validate:"required,min=1"`
+	Limit        int                   `validate:"required,min=1,max=100"`
 }
 
 // NewSearchServicesParams creates SearchServicesParams from HTTP request query parameters
@@ -70,13 +71,13 @@ func NewSearchServicesParams(r *http.Request) (*SearchServicesParams, error) {
 
 	// Parse skill level
 	if skillStr := query.Get("skill_level"); skillStr != "" {
-		skill := SkillLevel(skillStr)
+		skill := services.SkillLevel(skillStr)
 		params.SkillLevel = &skill
 	}
 
 	// Parse class type
 	if classStr := query.Get("class_type"); classStr != "" {
-		class := ClassType(classStr)
+		class := services.ClassType(classStr)
 		params.ClassType = &class
 	}
 
@@ -177,8 +178,8 @@ func (p *SearchServicesParams) Validate(ctx context.Context) error {
 }
 
 // ToSearchFilters converts SearchServicesParams to SearchFilters
-func (p *SearchServicesParams) ToSearchFilters() *SearchFilters {
-	filters := &SearchFilters{
+func (p *SearchServicesParams) ToSearchFilters() *services.SearchFilters {
+	filters := &services.SearchFilters{
 		CategorySlug: p.CategorySlug,
 		City:         p.City,
 		District:     p.District,
@@ -200,7 +201,7 @@ func (p *SearchServicesParams) ToSearchFilters() *SearchFilters {
 
 // ServiceSearchResult represents the search result with services and pagination
 type ServiceSearchResult struct {
-	Services   []*Service
+	Services   []*services.Service
 	Pagination *Pagination
 }
 
@@ -217,9 +218,9 @@ func ToV1SearchResponse(result *ServiceSearchResult) *v1.ServicesSearchResponse 
 	response := &v1.ServicesSearchResponse{}
 
 	// Convert services
-	services := make([]v1.ServiceWithVendor, 0, len(result.Services))
+	servicesV1 := make([]v1.ServiceWithVendor, 0, len(result.Services))
 	for _, svc := range result.Services {
-		services = append(services, ToV1ServiceWithVendor(svc))
+		servicesV1 = append(servicesV1, ToV1ServiceWithVendor(svc))
 	}
 
 	// Build pagination
@@ -229,7 +230,7 @@ func ToV1SearchResponse(result *ServiceSearchResult) *v1.ServicesSearchResponse 
 	totalPages := result.Pagination.TotalPages
 
 	// Build response structure
-	response.Data.Services = &services
+	response.Data.Services = &servicesV1
 	response.Data.Pagination = &v1.Pagination{
 		Page:       &page,
 		Limit:      &limit,
@@ -241,7 +242,7 @@ func ToV1SearchResponse(result *ServiceSearchResult) *v1.ServicesSearchResponse 
 }
 
 // ToV1ServiceWithVendor converts domain Service to v1.ServiceWithVendor
-func ToV1ServiceWithVendor(s *Service) v1.ServiceWithVendor {
+func ToV1ServiceWithVendor(s *services.Service) v1.ServiceWithVendor {
 	// Build base service fields
 	id := s.ID
 	name := s.Name
